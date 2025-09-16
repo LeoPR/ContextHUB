@@ -2,16 +2,23 @@
   <div class="nav-left">
     <a href="{{ url_for('index') }}" class="brand">ContextHub</a>
     {% if session.get('admin') %}
-      <a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint in ['admin', 'list_links'] else '' }}">Admin</a>
-      <a href="{{ url_for('users_list') }}" class="{{ 'active' if request.endpoint.startswith('users_') else '' }}">Usuários</a>
+      <a href="{{ url_for('admin.index') }}" class="{{ 'active' if (request.endpoint or '').startswith('admin.') and request.endpoint == 'admin.index' else '' }}">Admin</a>
+      <a href="{{ url_for('admin.users_list') }}" class="{{ 'active' if (request.endpoint or '').startswith('admin.users_') else '' }}">Usuários</a>
     {% endif %}
   </div>
   <div class="nav-right">
     {% if session.get('username') %}
-      <span class="muted">Olá, {{ session.get('username') }}</span>
-      <a href="{{ url_for('logout') }}">Sair</a>
+      {% if google_linked %}
+        <form method="post" action="{{ url_for('auth.google_unlink') }}" style="display:inline" onsubmit="return confirm('Desvincular sua conta Google?');">
+          <button type="submit" class="linklike">Desvincular Google</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('auth.google_login') }}">Vincular Google</a>
+      {% endif %}
+      <span class="muted" style="margin-left:12px;">Olá, {{ session.get('username') }}</span>
+      <a href="{{ url_for('auth.logout') }}" style="margin-left:12px;">Sair</a>
     {% else %}
-      <a href="{{ url_for('login') }}" class="{{ 'active' if request.endpoint == 'login' else '' }}">Entrar</a>
+      <a href="{{ url_for('auth.login') }}" class="{{ 'active' if request.endpoint == 'auth.login' else '' }}">Entrar</a>
     {% endif %}
   </div>
 </nav>

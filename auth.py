@@ -1,20 +1,30 @@
 """
 auth.py
 
-Gerenciamento de usuários e tokens "remember me".
-- Cria/usa a tabela users e tokens no mesmo DB SQLite (app.db por padrão).
+Gerenciamento de usuários, tokens "remember me" e vínculo com Google OAuth.
+- Tabelas: users, tokens, google_links.
 - Funções:
   - init_auth()
   - create_user(username, password, is_admin=False)
   - authenticate(username, password)
   - get_user(username) / get_user_by_id(id)
-  - user_count()
+  - user_count(), list_users()
   - change_password(user_id, new_password, revoke_tokens=True)
+  - update_user(user_id, username=None, is_admin=None)
   - delete_user(user_id)
-  - create_token(user_id, days=30, label=None) -> (token_id, raw_token)
-  - get_user_by_token(raw_token) -> user dict or None
-  - list_tokens(user_id)
-  - revoke_token(token_id) / revoke_token_by_raw(raw_token) / revoke_all_tokens_for_user(user_id)
+
+  - Tokens "remember me":
+    - create_token(user_id, days=30, label=None) -> (token_id, raw_token)
+    - get_user_by_token(raw_token)
+    - list_tokens(user_id)
+    - revoke_token(token_id) / revoke_token_by_raw(raw_token) / revoke_all_tokens_for_user(user_id)
+
+  - Google OAuth:
+    - link_google_account(user_id, google_sub, email, name, picture, access_token, refresh_token, expires_at)
+    - unlink_google_account(user_id)
+    - get_user_by_google_sub(google_sub)
+    - get_google_link_for_user(user_id)
+    - update_google_tokens_by_sub(google_sub, access_token, refresh_token, expires_at)
 """
 
 import os
@@ -42,11 +52,13 @@ def _get_conn(db_path: str = DB_PATH):
 
 def init_auth(db_path: str = DB_PATH):
     """
-    Inicializa as tabelas users e tokens.
+    Inicializa as tabelas users, tokens e google_links.
     """
     logger.debug("Inicializando auth DB em %s", db_path)
     conn = _get_conn(db_path)
     cur = conn.cursor()
+
+    # users
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
@@ -58,6 +70,8 @@ def init_auth(db_path: str = DB_PATH):
         )
         """
     )
+
+    # tokens (remember-me)
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS tokens (
@@ -71,9 +85,30 @@ def init_auth(db_path: str = DB_PATH):
         )
         """
     )
+
+    # google_links (vínculo com Google)
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS google_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            google_sub TEXT NOT NULL UNIQUE,
+            email TEXT,
+            name TEXT,
+            picture TEXT,
+            access_token TEXT,
+            refresh_token TEXT,
+            expires_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """
+    )
+
     conn.commit()
     conn.close()
-    logger.info("Tabelas users e tokens inicializadas (ou já existentes) em %s", db_path)
+    logger.info("Tabelas users, tokens e google_links inicializadas (ou já existentes) em %s", db_path)
 
 
 # -------------------------
@@ -265,7 +300,6 @@ def get_user_by_token(raw_token: str, db_path: str = DB_PATH) -> Optional[Dict]:
             exp = datetime.fromisoformat(expires_at)
             if datetime.utcnow() > exp:
                 logger.info("Token expirado token_id=%s user_id=%s", row["token_id"], row["user_id"])
-                # opcional: revogar token expirado
                 try:
                     revoke_token(row["token_id"], db_path=db_path)
                 except Exception:
@@ -319,3 +353,125 @@ def revoke_all_tokens_for_user(user_id: int, db_path: str = DB_PATH) -> int:
     conn.close()
     logger.info("Revoke all tokens for user_id=%s removed=%s", user_id, changed)
     return changed
+
+
+# -------------------------
+# Google OAuth linkage
+# -------------------------
+def link_google_account(
+    user_id: int,
+    google_sub: str,
+    email: Optional[str],
+    name: Optional[str],
+    picture: Optional[str],
+    access_token: Optional[str],
+    refresh_token: Optional[str],
+    expires_at_iso: Optional[str],
+    db_path: str = DB_PATH,
+) -> bool:
+    """
+    Vincula (ou atualiza) a conta Google a um user_id.
+    Garante unicidade: um google_sub só pode estar vinculado a um único user_id.
+    """
+    logger.debug("Vinculando Google sub=%s a user_id=%s", google_sub, user_id)
+
+    # Verifica se esse sub está vinculado a outro usuário
+    existing = get_user_by_google_sub(google_sub, db_path=db_path)
+    if existing and existing.get("id") != user_id:
+        logger.warning("google_sub já vinculado a user_id=%s (tentativa user_id=%s)", existing.get("id"), user_id)
+        raise ValueError("Esta conta Google já está vinculada a outro usuário.")
+
+    conn = _get_conn(db_path)
+    cur = conn.cursor()
+    # Upsert manual simples: remove vínculo existente do user_id e insere novamente
+    cur.execute("DELETE FROM google_links WHERE user_id = ?", (user_id,))
+    cur.execute(
+        """
+        INSERT INTO google_links (user_id, google_sub, email, name, picture, access_token, refresh_token, expires_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """,
+        (user_id, google_sub, email, name, picture, access_token, refresh_token, expires_at_iso),
+    )
+    conn.commit()
+    changed = cur.rowcount
+    conn.close()
+    logger.info("Conta Google vinculada a user_id=%s (sub=%s)", user_id, google_sub)
+    return changed > 0
+
+
+def unlink_google_account(user_id: int, db_path: str = DB_PATH) -> bool:
+    """
+    Remove vínculo Google do usuário.
+    """
+    conn = _get_conn(db_path)
+    cur = conn.cursor()
+    cur.execute("DELETE FROM google_links WHERE user_id = ?", (user_id,))
+    conn.commit()
+    changed = cur.rowcount
+    conn.close()
+    logger.info("Conta Google desvinculada de user_id=%s changed=%s", user_id, changed)
+    return changed > 0
+
+
+def get_user_by_google_sub(google_sub: str, db_path: str = DB_PATH) -> Optional[Dict]:
+    """
+    Retorna usuário vinculado a este google_sub, se houver.
+    """
+    conn = _get_conn(db_path)
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT u.id, u.username, u.is_admin, u.created_at
+        FROM google_links g
+        JOIN users u ON g.user_id = u.id
+        WHERE g.google_sub = ?
+        """,
+        (google_sub,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def get_google_link_for_user(user_id: int, db_path: str = DB_PATH) -> Optional[Dict]:
+    """
+    Retorna dados do vínculo Google para um user_id (se houver).
+    """
+    conn = _get_conn(db_path)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, google_sub, email, name, picture, access_token, refresh_token, expires_at, created_at, updated_at FROM google_links WHERE user_id = ?",
+        (user_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def update_google_tokens_by_sub(
+    google_sub: str,
+    access_token: Optional[str],
+    refresh_token: Optional[str],
+    expires_at_iso: Optional[str],
+    db_path: str = DB_PATH,
+) -> bool:
+    """
+    Atualiza tokens de Google pelo sub.
+    """
+    conn = _get_conn(db_path)
+    cur = conn.cursor()
+    if refresh_token is not None:
+        cur.execute(
+            "UPDATE google_links SET access_token = ?, refresh_token = ?, expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE google_sub = ?",
+            (access_token, refresh_token, expires_at_iso, google_sub),
+        )
+    else:
+        cur.execute(
+            "UPDATE google_links SET access_token = ?, expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE google_sub = ?",
+            (access_token, expires_at_iso, google_sub),
+        )
+    conn.commit()
+    changed = cur.rowcount
+    conn.close()
+    logger.info("Tokens Google atualizados para sub=%s changed=%s", google_sub, changed)
+    return changed > 0

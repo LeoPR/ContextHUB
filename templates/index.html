@@ -4,7 +4,7 @@
   <h2>Bem-vindo</h2>
   <p>Use o menu para navegar.</p>
   <ul>
-    <li><a href="{{ url_for('admin') }}">Área Admin</a> (requer login admin)</li>
-    <li><a href="{{ url_for('login') }}">Login / Registrar</a></li>
+    <li><a href="{{ url_for('admin.index') }}">Área Admin</a> (requer login admin)</li>
+    <li><a href="{{ url_for('auth.login') }}">Login / Registrar</a></li>
   </ul>
 {% endblock %}

@@ -1,8 +1,7 @@
 {% extends "layouts/admin_base.html" %}
-{% block admin_title %}Admin - Usuários{% endblock %}
 {% block admin_content %}
   <h2>Gerenciar Usuários</h2>
-  <p><a class="btn" href="{{ url_for('users_new') }}">Criar usuário</a></p>
+  <p><a class="btn" href="{{ url_for('admin.users_new') }}">Criar usuário</a></p>
   {% if users %}
     <table class="table">
       <thead>
@@ -22,10 +21,10 @@
             <td>{{ "Sim" if u.is_admin else "Não" }}</td>
             <td>{{ u.created_at }}</td>
             <td class="nowrap">
-              <a href="{{ url_for('users_edit', user_id=u.id) }}">Editar</a> |
-              <a href="{{ url_for('users_password', user_id=u.id) }}">Senha</a> |
-              <a href="{{ url_for('users_tokens', user_id=u.id) }}">Tokens</a> |
-              <form style="display:inline" method="post" action="{{ url_for('users_delete', user_id=u.id) }}" onsubmit="return confirm('Remover usuário?');">
+              <a href="{{ url_for('admin.users_edit', user_id=u.id) }}">Editar</a> |
+              <a href="{{ url_for('admin.users_password', user_id=u.id) }}">Senha</a> |
+              <a href="{{ url_for('admin.users_tokens', user_id=u.id) }}">Tokens</a> |
+              <form style="display:inline" method="post" action="{{ url_for('admin.users_delete', user_id=u.id) }}" onsubmit="return confirm('Remover usuário?');">
                 <button type="submit" class="linklike">Remover</button>
               </form>
             </td>
