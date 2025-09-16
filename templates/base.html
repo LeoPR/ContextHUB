@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}ContextHUB{% endblock %}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; }
+      nav a { margin-right: 10px; }
+      .flash { padding: 8px; border-radius: 4px; margin-bottom: 10px; }
+      .flash.success { background: #d4edda; color: #155724; }
+      .flash.danger { background: #f8d7da; color: #721c24; }
+      .flash.warning { background: #fff3cd; color: #856404; }
+      .flash.info { background: #d1ecf1; color: #0c5460; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background: #f2f2f2; text-align: left; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="{{ url_for('index') }}">Home</a>
+      {% if session.get('admin') %}
+        <a href="{{ url_for('admin') }}">Admin</a>
+        <a href="{{ url_for('list_links') }}">Lista</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Login Admin</a>
+      {% endif %}
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash {{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </body>
+</html>

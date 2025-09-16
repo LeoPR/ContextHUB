@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if user else 'Novo' }} Usuário{% endblock %}
+
+{% block content %}
+  <h2>{{ 'Editar' if user else 'Criar' }} Usuário</h2>
+  <form method="post">
+    <label for="username">Usuário:</label><br/>
+    <input type="text" id="username" name="username" required value="{{ user.username if user else '' }}" style="width: 40%;"/><br/><br/>
+    {% if not user %}
+      <label for="password">Senha:</label><br/>
+      <input type="password" id="password" name="password" required style="width: 40%;"/><br/><br/>
+    {% endif %}
+    <label><input type="checkbox" name="is_admin" {% if user and user.is_admin %}checked{% endif %}/> É admin</label><br/><br/>
+    <button type="submit">{{ 'Salvar' if user else 'Criar' }}</button>
+  </form>
+{% endblock %}

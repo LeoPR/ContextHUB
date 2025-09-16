@@ -1,0 +1,17 @@
+<nav class="topnav">
+  <div class="nav-left">
+    <a href="{{ url_for('index') }}" class="brand">ContextHub</a>
+    {% if session.get('admin') %}
+      <a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint in ['admin', 'list_links'] else '' }}">Admin</a>
+      <a href="{{ url_for('users_list') }}" class="{{ 'active' if request.endpoint.startswith('users_') else '' }}">Usuários</a>
+    {% endif %}
+  </div>
+  <div class="nav-right">
+    {% if session.get('username') %}
+      <span class="muted">Olá, {{ session.get('username') }}</span>
+      <a href="{{ url_for('logout') }}">Sair</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="{{ 'active' if request.endpoint == 'login' else '' }}">Entrar</a>
+    {% endif %}
+  </div>
+</nav>

@@ -1,0 +1,39 @@
+{% extends "layouts/admin_base.html" %}
+{% block admin_title %}Tokens de {{ user.username }}{% endblock %}
+{% block admin_content %}
+  <h2>Tokens de {{ user.username }}</h2>
+  <p><a href="{{ url_for('users_list') }}">Voltar à lista</a></p>
+  {% if tokens %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Label</th>
+          <th>Criado em</th>
+          <th>Expira em</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tokens %}
+          <tr>
+            <td>{{ t.id }}</td>
+            <td>{{ t.label }}</td>
+            <td>{{ t.created_at }}</td>
+            <td>{{ t.expires_at }}</td>
+            <td>
+              <form style="display:inline" method="post" action="{{ url_for('users_tokens_revoke', user_id=user.id, token_id=t.id) }}" onsubmit="return confirm('Revogar token?');">
+                <button type="submit">Revogar</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" action="{{ url_for('users_tokens_revoke_all', user_id=user.id) }}" onsubmit="return confirm('Revogar todos os tokens deste usuário?');">
+      <button type="submit">Revogar todos</button>
+    </form>
+  {% else %}
+    <p>Sem tokens para este usuário.</p>
+  {% endif %}
+{% endblock %}

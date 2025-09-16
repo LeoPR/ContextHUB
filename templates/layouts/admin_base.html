@@ -1,0 +1,17 @@
+{% extends "layouts/base.html" %}
+{% block title %}{% if self.admin_title() %}{% block admin_title %}{% endblock %}{% else %}Admin{% endif %}{% endblock %}
+{% block content %}
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <h3>Admin</h3>
+      <ul>
+        <li><a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint == 'admin' else '' }}">Sincronizar</a></li>
+        <li><a href="{{ url_for('list_links') }}" class="{{ 'active' if request.endpoint == 'list_links' else '' }}">Arquivos</a></li>
+        <li><a href="{{ url_for('users_list') }}" class="{{ 'active' if request.endpoint.startswith('users_') else '' }}">Usuários</a></li>
+      </ul>
+    </aside>
+    <section class="admin-content">
+      {% block admin_content %}{% endblock %}
+    </section>
+  </div>
+{% endblock %}

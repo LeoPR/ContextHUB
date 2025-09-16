@@ -1,0 +1,33 @@
+{% extends "layouts/admin_base.html" %}
+{% block admin_title %}Admin - Arquivos{% endblock %}
+{% block admin_content %}
+  <h2>Arquivos sincronizados</h2>
+  {% if links %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Arquivo</th>
+          <th>Tipo</th>
+          <th>Criado em</th>
+          <th>Origem</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in links %}
+          <tr>
+            <td>{{ l.id }}</td>
+            <td>{{ l.filename }}</td>
+            <td>{{ l.content_type }}</td>
+            <td>{{ l.created_at }}</td>
+            <td class="truncate" title="{{ l.url }}">{{ l.url }}</td>
+            <td><a href="{{ url_for('download', link_id=l.id) }}">Baixar</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Nenhum arquivo sincronizado ainda.</p>
+  {% endif %}
+{% endblock %}
