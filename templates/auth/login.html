@@ -1,30 +1,59 @@
-{% extends "layouts/base.html" %}
-{% block title %}Login Admin{% endblock %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Login - ContextHUB</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 2rem; }
+    a { color: #0b5ed7; text-decoration: none; }
+    .container { max-width: 420px; margin: 3rem auto; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1.25rem; }
+    .row { margin-bottom: 1rem; }
+    label { display: block; margin-bottom: .5rem; font-weight: 600; }
+    input[type="text"], input[type="password"] {
+      width: 100%; padding: .6rem .7rem; border: 1px solid #ccc; border-radius: 6px;
+    }
+    .actions { display: flex; justify-content: space-between; align-items: center; }
+    button {
+      background: #0b5ed7; color: white; border: none; padding: .6rem 1rem; border-radius: 6px; cursor: pointer;
+    }
+    .muted { color: #666; font-size: .9rem; }
+    .danger { color: #b00020; }
+    .center { text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1 class="center">Login</h1>
 
-{% block content %}
-  <h2>Login / Registrar Usuário</h2>
-  <p>Se o usuário não existir, ele será criado. O primeiro usuário criado torna-se admin automaticamente.</p>
+      <!-- Importante: nenhuma opção/botão de Google aqui -->
+      <form method="post" action="/auth/login">
+        <div class="row">
+          <label for="username">Email/Usuário</label>
+          <input id="username" name="username" type="text" autocomplete="username" required />
+        </div>
+        <div class="row">
+          <label for="password">Senha</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <div class="row actions">
+          <label class="muted">
+            <input type="checkbox" name="remember" value="1" />
+            Lembrar-me
+          </label>
+          <button type="submit">Entrar</button>
+        </div>
+      </form>
 
-  <div style="display:flex; gap:32px; flex-wrap: wrap;">
-    <form method="post" style="min-width:320px;">
-      <h3>Login local</h3>
-      <label for="username">Usuário:</label><br/>
-      <input type="text" id="username" name="username" required autofocus style="width: 100%;"/><br/><br/>
-      <label for="password">Senha:</label><br/>
-      <input type="password" id="password" name="password" required style="width: 100%;"/><br/><br/>
-      <label><input type="checkbox" name="remember" /> Lembrar sessão ({{ config.get('REMEMBER_DAYS', 30) }} dias)</label><br/><br/>
-      <button type="submit">Entrar / Registrar</button>
-    </form>
-
-    <div style="min-width:320px;">
-      <h3>Ou entre com Google</h3>
-      <p>Após vincular, você pode usar a conta Google para entrar.</p>
-      <p>
-        <a class="btn" href="{{ url_for('auth.google_login') }}">Entrar com Google</a>
-      </p>
-      <p>
-        <a class="btn" href="{{ url_for('auth.google_login') }}?remember=1">Entrar com Google (lembrar sessão)</a>
+      <p class="muted" style="margin-top:1rem;">
+        Precisa de acesso? Contate o administrador.
       </p>
     </div>
+    <p class="center" style="margin-top:1rem;">
+      <a href="/">Voltar</a>
+    </p>
   </div>
-{% endblock %}
+</body>
+</html>

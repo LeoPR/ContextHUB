@@ -1,10 +1,43 @@
-{% extends "layouts/base.html" %}
-{% block title %}Início{% endblock %}
-{% block content %}
-  <h2>Bem-vindo</h2>
-  <p>Use o menu para navegar.</p>
-  <ul>
-    <li><a href="{{ url_for('admin.index') }}">Área Admin</a> (requer login admin)</li>
-    <li><a href="{{ url_for('auth.login') }}">Login / Registrar</a></li>
-  </ul>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>ContextHUB - Início</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Mantém simples; se já existir seu CSS global, adicione o link aqui -->
+  <!-- <link rel="stylesheet" href="/static/css/main.css"> -->
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 2rem; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    nav a { margin-left: 1rem; text-decoration: none; color: #0b5ed7; }
+    .container { max-width: 860px; margin: 0 auto; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1.25rem; }
+    .muted { color: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ContextHUB</h1>
+    <nav>
+      {% if session.get('admin') %}
+        <a href="/admin">Admin</a>
+      {% endif %}
+      <!-- Ajuste este link se sua rota de logout tiver outro path -->
+      <a href="/auth/logout">Sair</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>Olá, {{ session.get('username') }}</h2>
+      <p class="muted">Você está autenticado. Use o menu para navegar.</p>
+      <ul>
+        {% if session.get('admin') %}
+          <li><a href="/admin">Área Administrativa</a></li>
+        {% endif %}
+        <!-- Adicione aqui os atalhos principais do app -->
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

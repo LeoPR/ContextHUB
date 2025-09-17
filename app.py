@@ -1,6 +1,6 @@
 """
 app.py com Blueprints (sem rota legada)
-- Registra blueprints de auth (/auth) e admin (/admin).
+- Registra blueprints de auth (/auth), admin (/admin) e admin_google (/admin).
 - Mantém rota "/" (index).
 - auth.init_auth() é chamado aqui.
 """
@@ -34,8 +34,10 @@ def create_app():
     # Registra Blueprints
     from blueprints.auth import auth_bp
     from blueprints.admin import admin_bp
+    from blueprints.admin_google_credentials import admin_google_bp  # NOVO
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(admin_google_bp, url_prefix="/admin")  # NOVO (rota /admin/google-credentials)
 
     @app.route("/")
     def index():
