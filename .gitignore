@@ -2,3 +2,4 @@
 /config/credentials
 /synced
 *.pyc
+*.db

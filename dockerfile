@@ -2,16 +2,21 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Copia dependências e instala
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Instala dependências do sistema e limpa cache para imagem mais enxuta
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends sqlite3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copia o código da aplicação
-#COPY . .
+# Copia requirements.txt apenas para /tmp para instalação dos pacotes
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Porta usada pela aplicação dentro do container
+# Variáveis de ambiente
+ENV DB_PATH=app.db
 ENV PORT=8080
+
 EXPOSE 8080
 
-# Comando para iniciar a aplicação
-CMD ["python", "app.py"]
+# Executa o script de criação do banco e inicia o app usando a pasta montada
+CMD ["sh", "-c", "python3 tools/db_apply_sql.py && python3 app.py"]
